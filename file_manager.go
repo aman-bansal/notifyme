@@ -21,6 +21,9 @@ func getAllAccounts() []Account {
 	response := make([]Account, 0)
 	files, _ := ioutil.ReadDir("data")
 	for _, f := range files {
+		if f.Name() == "README.md" {
+			continue
+		}
 		bytes, err := ioutil.ReadFile("data/" + f.Name())
 		if err != nil {
 			continue
