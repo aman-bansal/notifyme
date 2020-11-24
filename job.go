@@ -52,19 +52,14 @@ func StartJobToSendNotification() {
 				}
 
 				d.LastActiveId = id
-				err = save(d)
-				if err != nil {
-					log.Print(err)
-					continue
-				}
+				log.Print(save(d))
 			}
 		}
 	}()
 }
 
-//make github call paginated
+//TODO make github call paginated
 func checkAndSendNotificationIfRequired(data Account) (string, error) {
-	log.Print("got request for", data)
 	req, err := http.NewRequest("GET", "https://api.github.com/notifications?all=true", nil)
 	if err != nil {
 		return "", err
@@ -78,7 +73,6 @@ func checkAndSendNotificationIfRequired(data Account) (string, error) {
 	}
 
 	response := readResponse(do)
-	log.Print("response is", response)
 	if len(response) == 0 {
 		return "", nil
 	}
@@ -86,7 +80,6 @@ func checkAndSendNotificationIfRequired(data Account) (string, error) {
 	if len(data.LastActiveId) == 0 {
 		return response[0].Id, nil
 	}
-
 	notifToSend := make([]*GithubResponse, 0)
 	for _, r := range response {
 		if r.Id > data.LastActiveId && r.Reason != "subscribed" {
@@ -103,8 +96,6 @@ func sendSlackNotificationForGithub(d Account, notifFor []*GithubResponse) {
 	}
 
 	for _, n := range notifFor {
-		log.Print(fmt.Sprintf(`[{"type":"section","text":{"type":"mrkdwn","text":"This is related to repository %s because of %s over %s"}},{"type":"section","text":{"type":"mrkdwn","text":"Reason:*%s*"},"accessory":{"type":"button","text":{"type":"plain_text","text":"Takemethere","emoji":true},"url":"%s",}},{"type":"divider"}]`,
-			n.Repository.Name, n.Reason, n.Subject.Type, n.Reason, "https://github.com/"+strings.Trim(n.Subject.Url, "https://api.github.com/repos/")))
 		slackPath := fmt.Sprintf(slackNotifPath, *SlackBotToken, d.UserId,
 			url.PathEscape("You have new notification on github."),
 			url.PathEscape(fmt.Sprintf(`[
@@ -135,11 +126,12 @@ func sendSlackNotificationForGithub(d Account, notifFor []*GithubResponse) {
 			"type": "divider"
 		}
 	]`, n.Repository.Name, n.Reason, n.Subject.Type, n.Reason, "https://github.com/"+strings.Trim(n.Subject.Url, "https://api.github.com/repos/"))))
-		log.Print(slackPath)
 		req, err := http.NewRequest("POST", slackPath, nil)
-		log.Print(err)
+		if err != nil {
+			log.Print(err)
+			return
+		}
 		req.Header.Set("accept", "application/json")
-
 		_, err = http.DefaultClient.Do(req)
 		log.Print(err)
 	}

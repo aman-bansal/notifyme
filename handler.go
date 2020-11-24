@@ -20,7 +20,6 @@ const githubAuthorizePath = "https://github.com/login/oauth/authorize?client_id=
 func RegisterMessageHandler(router *mux.Router) {
 	router.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
-		log.Print(r.Form)
 		url := r.Form.Get("response_url")
 		encodeUser := base64.StdEncoding.EncodeToString([]byte(r.Form.Get("user_id")))
 		body := fmt.Sprintf(message, fmt.Sprintf(githubAuthorizePath, *GithubClientId, "http://"+*Address+"/oauth/redirect", encodeUser))
