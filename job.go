@@ -79,7 +79,7 @@ func checkAndSendNotificationIfRequired(data Account) (string, error) {
 	}
 
 	if len(data.LastActiveId) == 0 {
-		return response[0].Id, nil
+		return response[0].UpdatedAt, nil
 	}
 	notifToSend := make([]*GithubResponse, 0)
 	for _, r := range response {
