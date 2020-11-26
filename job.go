@@ -17,6 +17,7 @@ type GithubResponse struct {
 	Id         string           `json:"id"`
 	Reason     string           `json:"reason"`
 	Subject    GithubSubject    `json:"subject"`
+	UpdatedAt  string           `json:"updated_at"`
 	Repository GithubRepository `json:"repository"`
 }
 
@@ -45,13 +46,13 @@ func StartJobToSendNotification() {
 					continue
 				}
 
-				id, err := checkAndSendNotificationIfRequired(d)
+				lastUpdatedAt, err := checkAndSendNotificationIfRequired(d)
 				if err != nil {
 					log.Print(err)
 					continue
 				}
 
-				d.LastActiveId = id
+				d.LastActiveId = lastUpdatedAt
 				log.Print(save(d))
 			}
 		}
@@ -82,12 +83,12 @@ func checkAndSendNotificationIfRequired(data Account) (string, error) {
 	}
 	notifToSend := make([]*GithubResponse, 0)
 	for _, r := range response {
-		if r.Id > data.LastActiveId && r.Reason != "subscribed" {
+		if r.UpdatedAt > data.LastActiveId && r.Reason != "subscribed" {
 			notifToSend = append(notifToSend, r)
 		}
 	}
 	sendSlackNotificationForGithub(data, notifToSend)
-	return response[0].Id, nil
+	return response[0].UpdatedAt, nil
 }
 
 func sendSlackNotificationForGithub(d Account, notifFor []*GithubResponse) {
